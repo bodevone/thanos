@@ -442,7 +442,11 @@ func TestLazyBinaryReader_LoadUnloadDeleteRaceCondition(t *testing.T) {
 			done := make(chan struct{})
 			time.AfterFunc(runDuration, func() { close(done) })
 			wg := sync.WaitGroup{}
-			wg.Add(3)
+			if lazyDownload {
+				wg.Add(3)
+			} else {
+				wg.Add(2)
+			}
 
 			// Start a goroutine which continuously try to unload the reader.
 			go func() {
@@ -458,20 +462,23 @@ func TestLazyBinaryReader_LoadUnloadDeleteRaceCondition(t *testing.T) {
 				}
 			}()
 
-			// Start a goroutine which continuously try to delete the index header.
-			go func() {
-				defer wg.Done()
+			if lazyDownload {
+				// Start a goroutine which continuously try to delete the index header.
+				go func() {
+					defer wg.Done()
 
-				for {
-					select {
-					case <-done:
-						return
-					default:
-						err := r.deleteIfIdleSince(0)
-						testutil.Assert(t, err == nil || err == errLoadedForDelete || errors.Is(err, os.ErrNotExist))
+					for {
+						select {
+						case <-done:
+							return
+						default:
+							err := r.deleteIfIdleSince(0)
+							testutil.Ok(t, r.unloadIfIdleSince(0))
+							testutil.Assert(t, err == nil || err == errLoadedForDelete || errors.Is(err, os.ErrNotExist))
+						}
 					}
-				}
-			}()
+				}()
+			}
 
 			// Try to read multiple times, while the other goroutines continuously try to unload and delete it.
 			go func() {
@@ -484,7 +491,6 @@ func TestLazyBinaryReader_LoadUnloadDeleteRaceCondition(t *testing.T) {
 					default:
 						_, err := r.PostingsOffset("a", "1")
 						testutil.Assert(t, err == nil || err == errUnloadedWhileLoading)
-
 					}
 				}
 			}()

@@ -156,7 +156,7 @@ func TestReaderPool_ShouldDeleteIdleLazyReaders(t *testing.T) {
 	testutil.Ok(t, err)
 
 	metrics := NewReaderPoolMetrics(nil)
-	pool := NewReaderPool(log.NewNopLogger(), true, idleTimeout, idleTimeout, metrics, AlwaysEagerDownloadIndexHeader)
+	pool := NewReaderPool(log.NewNopLogger(), true, idleTimeout, idleTimeout, metrics, AlwaysLazyDownloadIndexHeader)
 	defer pool.Close()
 
 	r, err := pool.NewBinaryReader(ctx, log.NewNopLogger(), bkt, tmpDir, blockID, 3, meta)
