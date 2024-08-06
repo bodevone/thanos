@@ -368,6 +368,10 @@ func (r *LazyBinaryReader) deleteIfIdleSince(ts int64) error {
 // isIdleForDeleteSince returns true if the reader is idle since given time (as unix nano), unloaded
 // and index header file is present.
 func (r *LazyBinaryReader) isIdleForDeleteSince(ts int64) bool {
+	if !r.lazyDownload {
+		return false
+	}
+
 	if r.usedAt.Load() > ts {
 		return false
 	}
