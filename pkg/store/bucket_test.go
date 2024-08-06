@@ -693,6 +693,7 @@ func TestBucketStore_TSDBInfo(t *testing.T) {
 		false,
 		false,
 		0,
+		0,
 		WithChunkPool(chunkPool),
 		WithFilterConfig(allowAllFilterConf),
 	)
